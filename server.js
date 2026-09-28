@@ -16,7 +16,7 @@ const images = new Map();  // id -> { buf, type }
 let version = 0;
 const clients = new Set();
 
-const INDEX = fs.readFileSync(path.join(__dirname, "public", "index.html"));
+const INDEX = fs.readFileSync(path.join(__dirname, "index.html"));
 
 function bump() {
   version++;
