@@ -114,6 +114,11 @@ header.top {
 /* ---------- wall ---------- */
 main { padding: 2rem clamp(1rem, 4vw, 3rem) 6rem; }
 .wall { columns: 300px; column-gap: 2rem; }
+.card-wrapper {
+  break-inside: avoid;
+  display: inline-block;
+  width: 100%;
+}
 .print {
   break-inside: avoid;
   display: block;
@@ -152,10 +157,40 @@ main { padding: 2rem clamp(1rem, 4vw, 3rem) 6rem; }
   background: var(--c); color: var(--ink);
 }
 .counts { margin-left: auto; font-size: .85rem; color: var(--ink-soft); }
-.reactions { display: flex; gap: 0.3rem; margin-top: 0.5rem; flex-wrap: wrap; }
-body.present .reactions { gap: 0.25rem; margin-top: 0.4rem; }
-.emoji-btn { appearance: none; border: 1px solid #ddd; background: #f5f5f5; padding: 0.3rem 0.5rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: 600; transition: all 0.2s; }
-body.present .emoji-btn { padding: 0.25rem 0.4rem; font-size: 0.8rem; }
+.reactions { 
+  display: flex !important; 
+  gap: 0.3rem !important; 
+  margin-top: 0.5rem !important; 
+  flex-wrap: wrap !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+.emoji-btn { 
+  appearance: none !important; 
+  border: 1px solid #ddd !important; 
+  background: #f5f5f5 !important; 
+  padding: 0.3rem 0.5rem !important; 
+  border-radius: 4px !important; 
+  cursor: pointer !important; 
+  font-size: 0.9rem !important; 
+  font-weight: 600 !important; 
+  transition: all 0.2s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  white-space: nowrap !important;
+  user-select: none !important;
+}
+body.present .reactions { 
+  gap: 0.2rem !important; 
+  margin-top: 0.3rem !important; 
+  font-size: 0.75rem !important;
+  display: flex !important;
+}
+body.present .emoji-btn { 
+  padding: 0.2rem 0.3rem !important; 
+  font-size: 0.7rem !important;
+  display: inline-flex !important;
+}
 .emoji-btn:hover { background: #e8e8e8; border-color: var(--ink-soft); }
 .emoji-btn.pulse { animation: reactionPulse 0.4s ease-out; }
 @keyframes reactionPulse {

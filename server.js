@@ -51,7 +51,7 @@ function readBody(req) {
 function publicPost(p) {
   return {
     id: p.id, createdAt: p.createdAt, alt: p.alt, where: p.where, name: p.name,
-    tags: p.tags, comments: p.comments
+    tags: p.tags, comments: p.comments, reactions: p.reactions || {}
   };
 }
 

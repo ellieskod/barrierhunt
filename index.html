@@ -246,22 +246,25 @@
       const fixes = p.comments.filter(c => c.kind === "fix").length;
       const comms = p.comments.length - fixes;
       const top = TAGS.filter(t => p.tags[t.key] > 0);
-      const card = el("button", {
+      const container = el("div", { class: "card-wrapper" },
+        el("button", {
           class: "print" + (!firstLoad && !seen.has(p.id) ? " fresh" : ""),
           type: "button",
           style: `--r:${r}deg;--tr:${tr}deg`,
           "aria-label": `${p.where}. Open for details, reasons, fixes and comments.`,
           onclick: () => openPost(p.id)
         },
-        el("img", { src: "/img/" + p.id, alt: p.alt, loading: "lazy" }),
-        el("p", { class: "where", text: p.where }),
-        el("div", { class: "meta" },
-          top.map(t => el("span", { class: "chip", style: `--c:${t.color}` }, t.label)),
-          el("span", { class: "counts", text: `${fixes} fix${fixes === 1 ? "" : "es"}, ${comms} comment${comms === 1 ? "" : "s"}` })
+          el("img", { src: "/img/" + p.id, alt: p.alt, loading: "lazy" }),
+          el("p", { class: "where", text: p.where }),
+          el("div", { class: "meta" },
+            top.map(t => el("span", { class: "chip", style: `--c:${t.color}` }, t.label)),
+            el("span", { class: "counts", text: `${fixes} fix${fixes === 1 ? "" : "es"}, ${comms} comment${comms === 1 ? "" : "s"}` })
+          )
         ),
         el("div", { class: "reactions", id: "reactions-" + p.id },
-          ["❤️", "😲", "🤯"].map(emoji => 
-            el("div", {
+          ["❤️", "😲", "🤯"].map(emoji => {
+            const count = p.reactions?.[emoji] || 0;
+            return el("div", {
               class: "emoji-btn",
               role: "button",
               tabindex: "0",
@@ -270,11 +273,11 @@
               onclick: (e) => { e.stopPropagation(); addReaction(p.id, emoji); },
               onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); addReaction(p.id, emoji); } },
               title: `React with ${emoji}`
-            }, emoji + (p.reactions?.[emoji] || 0 ? ` ${p.reactions[emoji]}` : ""))
-          )
+            }, emoji + (count ? ` ${count}` : ""));
+          })
         )
       );
-      frag.append(card);
+      frag.append(container);
       seen.add(p.id);
     });
     wall.replaceChildren(frag);
@@ -348,6 +351,7 @@
     try {
       const btn = document.querySelector(`[data-post-id="${postId}"][data-emoji="${emoji}"]`);
       if (btn) {
+        console.log(`💓 Reaction clicked: ${emoji} on post ${postId}`);
         btn.classList.add("pulse");
         if (present) {
           const rect = btn.getBoundingClientRect();
@@ -355,9 +359,13 @@
         }
         setTimeout(() => btn.classList.remove("pulse"), 400);
       }
-      await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
+      const result = await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
+      console.log(`✅ Reaction sent:`, result);
       load();
-    } catch (e) { toast(e.message); }
+    } catch (e) { 
+      console.error(`❌ Reaction error: ${e.message}`);
+      toast(e.message); 
+    }
   }
 
   let loading = false, again = false;
@@ -367,6 +375,7 @@
     try {
       const data = await api("/api/posts");
       posts = data.posts;
+      console.log(`📊 Loaded ${posts.length} posts with reactions:`, posts.map(p => ({ id: p.id, reactions: p.reactions })));
       renderAll();
     } catch (e) { /* keep showing what we have */ }
     loading = false;
