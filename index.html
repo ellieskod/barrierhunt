@@ -168,7 +168,6 @@
   if (present) {
     document.body.classList.add("present");
     const joinUrl = location.origin + location.pathname;
-    $("#joinUrl").textContent = joinUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
     if (window.QRCode) new QRCode($("#qr"), { text: joinUrl, width: 150, height: 150, colorDark: "#1b1c1e", colorLight: "#ffffff" });
     else $("#qr").hidden = true;
   }
