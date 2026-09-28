@@ -240,6 +240,9 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 .close { background: transparent; border: 2px solid var(--asphalt-3); color: var(--ink); min-width: 48px; font-size: 1.5rem; }
 .dlg-body { padding: 1.25rem; overflow-y: auto; max-height: calc(100vh - 4rem); }
 .dlg-body img { width: 100%; height: auto; max-height: 50vh; object-fit: contain; background: #e8e5dc; display: block; }
+body.present dialog { width: min(90vw, 800px); max-height: 85vh; }
+body.present .dlg-body { max-height: calc(85vh - 4rem); }
+body.present .dlg-body img { max-height: 70vh; }
 .alt {
   margin: .75rem 0 0; padding: .6rem .8rem;
   background: #ebe8df; border-left: 4px solid var(--ink);
@@ -349,14 +352,14 @@ body.present .print { cursor: grab; }
 body.present .print:active { cursor: grabbing; }
 .print[draggable="true"] { user-select: none; }
 .paint-comment {
-  position: fixed;
+  position: fixed !important;
   background: white;
   border: 2px solid var(--asphalt-3);
   border-radius: var(--radius);
   padding: 0.6rem;
   font-size: 0.9rem;
   box-shadow: 0 4px 12px rgba(0,0,0,.15);
-  z-index: 1001;
+  z-index: 2000 !important;
   max-width: 200px;
   cursor: move;
 }

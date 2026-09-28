@@ -161,8 +161,8 @@ const server = http.createServer(async (req, res) => {
       }
     }
 
-    if (req.method === "POST" && parts[0] === "api" && parts[1] === "posts" && parts[2] === "reactions") {
-      const p = posts.find(x => x.id === parts[3]);
+    if (req.method === "POST" && parts[0] === "api" && parts[1] === "posts" && parts[3] === "reactions") {
+      const p = posts.find(x => x.id === parts[2]);
       if (!p) return send(res, 404, { error: "Post not found." });
       const b = await readBody(req);
       const emoji = b.emoji && typeof b.emoji === "string" ? b.emoji.slice(0, 5) : "";
