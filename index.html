@@ -78,6 +78,14 @@
       <label for="fix">Guerilla fix (optional)
         <span class="hint">Cheap, unofficial, doable this week. Add emojis to show your creativity! 💪 ✨ 🔧</span></label>
       <textarea id="fix" maxlength="550"></textarea>
+      <div style="margin-top: 0.5rem;">
+        <label style="display: block; margin-bottom: 0.5rem;">
+          <input type="file" id="fixPhoto" accept="image/*" style="display: none;">
+          <div id="fixPick" class="photo-pick" style="cursor: pointer; padding: 0.75rem; background: #f5f5f5; border-radius: var(--radius); text-align: center; color: #666;">
+            <span id="fixPickText">Add fix photo (optional)</span>
+          </div>
+        </label>
+      </div>
     </div>
     <div class="field">
       <label for="name">Your name (optional)</label>
@@ -129,6 +137,14 @@
         <label for="cText">Your text
           <span class="hint">Add emojis to react: 👍 🤦 ❤️ 💡 ✨ etc.</span></label>
         <textarea id="cText" maxlength="550"></textarea>
+        <div id="cPhotoDiv" style="display: none; margin-top: 0.5rem;">
+          <label style="display: block; margin-bottom: 0.5rem;">
+            <input type="file" id="cPhoto" accept="image/*" style="display: none;">
+            <div id="cPhotoPick" class="photo-pick" style="cursor: pointer; padding: 0.75rem; background: #f5f5f5; border-radius: var(--radius); text-align: center; color: #666;">
+              <span id="cPhotoPickText">Add photo (optional)</span>
+            </div>
+          </label>
+        </div>
       </div>
       <div class="field">
         <label for="cName">Your name (optional)</label>
@@ -239,6 +255,7 @@
     }
     wall.style.columns = "";
     const frag = document.createDocumentFragment();
+    const freshCards = [];
     posts.forEach(p => {
       const h = hash(p.id);
       const r = ((h % 7) - 3) * 0.6;
@@ -246,9 +263,10 @@
       const fixes = p.comments.filter(c => c.kind === "fix").length;
       const comms = p.comments.length - fixes;
       const top = TAGS.filter(t => p.tags[t.key] > 0);
+      const isFresh = !firstLoad && !seen.has(p.id);
       const container = el("div", { class: "card-wrapper" },
         el("button", {
-          class: "print" + (!firstLoad && !seen.has(p.id) ? " fresh" : ""),
+          class: "print" + (isFresh ? " fresh" : ""),
           type: "button",
           style: `--r:${r}deg;--tr:${tr}deg`,
           "aria-label": `${p.where}. Open for details, reasons, fixes and comments.`,
@@ -277,10 +295,28 @@
           })
         )
       );
+      if (isFresh) freshCards.push(container);
       frag.append(container);
       seen.add(p.id);
     });
     wall.replaceChildren(frag);
+    
+    // Trigger confetti for fresh cards in present mode
+    if (present && freshCards.length) {
+      requestAnimationFrame(() => {
+        freshCards.forEach(card => {
+          const btn = card.querySelector('.print');
+          if (btn) {
+            const rect = btn.getBoundingClientRect();
+            if (rect.width > 0) {
+              console.log('🎉 Confetti for fresh card at:', rect.left, rect.top);
+              createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            }
+          }
+        });
+      });
+    }
+    
     firstLoad = false;
   }
 
@@ -306,6 +342,7 @@
 
     const item = c => el("li", { class: c.kind },
       el("div", { text: c.text }),
+      c.kind === "fix" && c.imageId ? el("img", { src: "/img/" + c.imageId, alt: "Fix photo", style: "max-width: 100%; max-height: 300px; margin-top: 0.5rem; border-radius: var(--radius);" }) : null,
       el("div", { class: "who" },
         el("span", { text: (c.name || "Anonymous") + ", " + ago(c.createdAt) }),
         adminKey ? el("button", { class: "del", type: "button", onclick: () => delComment(p.id, c.id) }, "Delete") : null));
@@ -478,13 +515,36 @@
     }
   });
 
+  let fixPhotoData = "";
+  $("#fixPhoto").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $("#fixPickText").textContent = "Preparing photo…";
+    try {
+      const img = await loadImage(file);
+      const max = 800;
+      const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale);
+      c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      fixPhotoData = c.toDataURL("image/jpeg", 0.8);
+      const pick = $("#fixPick");
+      pick.querySelector("img")?.remove();
+      $("#fixPickText").textContent = "Change fix photo";
+      pick.insertBefore(el("img", { src: fixPhotoData, alt: "Preview of fix photo", style: "max-height: 200px; max-width: 100%; object-fit: contain;" }), $("#fixPickText"));
+    } catch (err) {
+      fixPhotoData = "";
+      $("#fixPickText").textContent = "Add fix photo (optional)";
+      $("#addErr").textContent = err.message;
+    }
+  });
+
   $("#addForm").addEventListener("submit", async e => {
     e.preventDefault();
     const err = $("#addErr");
     const alt = $("#alt").value.trim(), where = $("#where").value.trim();
     if (!photoData) { err.textContent = "Add a photo first."; $("#photo").focus(); return; }
-    if (!alt) { err.textContent = "Write alt text for the photo."; $("#alt").focus(); return; }
-    if (!where) { err.textContent = "Describe the barrier and where it is."; $("#where").focus(); return; }
     err.textContent = "";
     const btn = $("#addBtn"); btn.disabled = true; btn.textContent = "Posting…";
     const name = $("#name").value.trim(); rememberName(name);
@@ -494,6 +554,9 @@
         fix: $("#fix").value.trim(),
         tags: [...document.querySelectorAll('input[name=tag]:checked')].map(i => i.value)
       };
+      if (fixPhotoData) {
+        payload.fixPhoto = fixPhotoData;
+      }
       if ($("#otherCheck").checked) {
         payload.otherComment = $("#otherText").value.trim();
       }
@@ -503,11 +566,44 @@
       $("#addForm").reset(); $("#name").value = name;
       $("#otherText").style.display = "none";
       photoData = ""; $("#pick").querySelector("img")?.remove(); $("#pickText").textContent = "Take or choose a photo";
+      fixPhotoData = ""; $("#fixPick").querySelector("img")?.remove(); $("#fixPickText").textContent = "Add fix photo (optional)";
       $("#addDlg").close();
       toast("Posted to the wall");
       load();
     } catch (ex) { err.textContent = ex.message; }
     btn.disabled = false; btn.textContent = "Post to wall";
+  });
+
+  let commentPhotoData = "";
+  document.querySelectorAll('input[name=kind]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isFix = document.querySelector('input[name=kind]:checked').value === 'fix';
+      $("#cPhotoDiv").style.display = isFix ? 'block' : 'none';
+    });
+  });
+
+  $("#cPhoto").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $("#cPhotoPickText").textContent = "Preparing photo…";
+    try {
+      const img = await loadImage(file);
+      const max = 800;
+      const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale);
+      c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      commentPhotoData = c.toDataURL("image/jpeg", 0.8);
+      const pick = $("#cPhotoPick");
+      pick.querySelector("img")?.remove();
+      $("#cPhotoPickText").textContent = "Change photo";
+      pick.insertBefore(el("img", { src: commentPhotoData, alt: "Preview of photo", style: "max-height: 200px; max-width: 100%; object-fit: contain;" }), $("#cPhotoPickText"));
+    } catch (err) {
+      commentPhotoData = "";
+      $("#cPhotoPickText").textContent = "Add photo (optional)";
+      $("#cErr").textContent = err.message;
+    }
   });
 
   $("#cForm").addEventListener("submit", async e => {
@@ -519,8 +615,13 @@
     const name = $("#cName").value.trim(); rememberName(name);
     const btn = $("#cBtn"); btn.disabled = true;
     try {
-      await api(`/api/posts/${openId}/comments`, { method: "POST", body: JSON.stringify({ text, kind, name }) });
+      const payload = { text, kind, name };
+      if (kind === "fix" && commentPhotoData) {
+        payload.fixPhoto = commentPhotoData;
+      }
+      await api(`/api/posts/${openId}/comments`, { method: "POST", body: JSON.stringify(payload) });
       $("#cText").value = "";
+      commentPhotoData = ""; $("#cPhotoPick").querySelector("img")?.remove(); $("#cPhotoPickText").textContent = "Add photo (optional)";
       toast(kind === "fix" ? "Fix posted" : "Comment posted");
       load();
     } catch (ex) { $("#cErr").textContent = ex.message; }

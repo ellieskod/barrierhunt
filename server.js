@@ -120,8 +120,6 @@ const server = http.createServer(async (req, res) => {
       const alt = clean(b.alt, 400);
       const where = clean(b.where, 300);
       if (!m) return send(res, 400, { error: "Add a photo (JPEG, PNG or WebP)." });
-      if (!alt) return send(res, 400, { error: "Write alt text for the photo." });
-      if (!where) return send(res, 400, { error: "Describe the barrier and where it is." });
       const id = crypto.randomBytes(6).toString("hex");
       images.set(id, { buf: Buffer.from(m[2], "base64"), type: m[1] });
       const tags = { ignorance: 0, cost: 0, normative: 0 };
@@ -130,7 +128,15 @@ const server = http.createServer(async (req, res) => {
       const fix = clean(b.fix, 500);
       const otherComment = clean(b.otherComment, 300);
       const name = clean(b.name, 40);
-      if (fix) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "fix", text: fix, name, createdAt: Date.now() });
+      if (fix) {
+        let fixImageId = null;
+        const fixPhotoMatch = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(b.fixPhoto || "");
+        if (fixPhotoMatch) {
+          fixImageId = crypto.randomBytes(6).toString("hex");
+          images.set(fixImageId, { buf: Buffer.from(fixPhotoMatch[2], "base64"), type: fixPhotoMatch[1] });
+        }
+        comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "fix", text: fix, name, createdAt: Date.now(), imageId: fixImageId });
+      }
       if (otherComment) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "comment", text: `Other: ${otherComment}`, name, createdAt: Date.now() });
       posts.push({ id, createdAt: Date.now(), alt, where, name, tags, comments, reactions: {} });
       while (posts.length > MAX_POSTS) images.delete(posts.shift().id);
@@ -147,7 +153,19 @@ const server = http.createServer(async (req, res) => {
         const text = clean(b.text, 500);
         if (!text) return send(res, 400, { error: "Write something first." });
         const kind = b.kind === "fix" ? "fix" : "comment";
-        p.comments.push({ id: crypto.randomBytes(4).toString("hex"), kind, text, name: clean(b.name, 40), createdAt: Date.now() });
+        const comment = { id: crypto.randomBytes(4).toString("hex"), kind, text, name: clean(b.name, 40), createdAt: Date.now() };
+        
+        // Handle fix photos in comments
+        if (kind === "fix" && b.fixPhoto) {
+          const fixPhotoMatch = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(b.fixPhoto || "");
+          if (fixPhotoMatch) {
+            const fixImageId = crypto.randomBytes(6).toString("hex");
+            images.set(fixImageId, { buf: Buffer.from(fixPhotoMatch[2], "base64"), type: fixPhotoMatch[1] });
+            comment.imageId = fixImageId;
+          }
+        }
+        
+        p.comments.push(comment);
         if (p.comments.length > 200) p.comments.shift();
         bump();
         return send(res, 201, { ok: true });
