@@ -317,7 +317,18 @@ body.present .title { font-size: clamp(2.5rem, 9vw, 5rem); }
   .lane .label { display: none; }
 }
 @media (min-width: 641px) { .fab { display: none; } }
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; }
-  .print:hover { transform: rotate(var(--r, 0deg)); }
+/* ---------- draggable mode ---------- */
+body.present .print { cursor: grab; }
+body.present .print:active { cursor: grabbing; }
+.print[draggable="true"] { user-select: none; }
+.paint-comment {
+  position: fixed;
+  background: white;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  z-index: 1001;
+  max-width: 280px;
+  cursor: move;
 }
