@@ -349,18 +349,30 @@
 
   async function addReaction(postId, emoji) {
     try {
+      const post = posts.find(p => p.id === postId);
+      if (!post) return;
+      
+      // Optimistically update the UI
+      if (!post.reactions) post.reactions = {};
+      post.reactions[emoji] = (post.reactions[emoji] || 0) + 1;
+      
       const btn = document.querySelector(`[data-post-id="${postId}"][data-emoji="${emoji}"]`);
       if (btn) {
         console.log(`💓 Reaction clicked: ${emoji} on post ${postId}`);
         btn.classList.add("pulse");
+        btn.textContent = emoji + (post.reactions[emoji] ? ` ${post.reactions[emoji]}` : "");
         if (present) {
           const rect = btn.getBoundingClientRect();
           createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
         }
         setTimeout(() => btn.classList.remove("pulse"), 400);
       }
+      
+      // Send to server
       const result = await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
       console.log(`✅ Reaction sent:`, result);
+      
+      // Final sync with server
       load();
     } catch (e) { 
       console.error(`❌ Reaction error: ${e.message}`);
