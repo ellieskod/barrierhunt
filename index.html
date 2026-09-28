@@ -314,23 +314,31 @@
   function renderAll() { renderLane(); renderWall(); renderDetail(); }
 
   function createConfetti(x, y) {
-    const confettiPieces = ['🎉', '✨', '🎊', '🌟'];
-    for (let i = 0; i < 12; i++) {
+    const colors = ['#ffd84d', '#99ccff', '#ffb3d9', '#99999a'];
+    const emojis = ['🎉', '✨', '🎊', '🌟', '⭐', '💫'];
+    
+    // Create more particles for better effect
+    for (let i = 0; i < 20; i++) {
       const conf = document.createElement('div');
-      conf.textContent = confettiPieces[Math.floor(Math.random() * confettiPieces.length)];
+      const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      
+      conf.textContent = emoji;
       conf.style.cssText = `
         position: fixed;
         left: ${x}px;
         top: ${y}px;
-        font-size: 24px;
+        font-size: ${20 + Math.random() * 16}px;
         pointer-events: none;
-        z-index: 3000;
-        animation: confettiFall ${0.8 + Math.random() * 0.6}s ease-out forwards;
-        --tx: ${(Math.random() - 0.5) * 250}px;
-        --ty: ${Math.random() * 250 + 120}px;
+        z-index: 3001;
+        animation: confettiFall ${1 + Math.random() * 0.8}s ease-out forwards;
+        --tx: ${(Math.random() - 0.5) * 300}px;
+        --ty: ${Math.random() * 300 + 150}px;
+        --rot: ${Math.random() * 720}deg;
+        opacity: 1;
       `;
       document.body.appendChild(conf);
-      setTimeout(() => conf.remove(), 1400);
+      setTimeout(() => conf.remove(), 1800);
     }
   }
 
@@ -537,7 +545,13 @@
     });
 
     document.addEventListener("mouseup", () => {
-      if (draggedCard) draggedCard.classList.remove("dragging");
+      if (draggedCard) {
+        draggedCard.classList.remove("dragging");
+        draggedCard.style.position = "";
+        draggedCard.style.left = "";
+        draggedCard.style.top = "";
+        draggedCard.style.zIndex = "";
+      }
       draggedCard = null;
     });
 
@@ -629,16 +643,24 @@
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((m) => {
         m.addedNodes.forEach((node) => {
-          if (node.classList && node.classList.contains('print') && node.classList.contains('fresh')) {
-            setTimeout(() => {
-              const rect = node.getBoundingClientRect();
-              createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            }, 50);
+          if (node.nodeType === 1 && node.classList) {
+            if (node.classList.contains('print') && node.classList.contains('fresh')) {
+              // Delay to ensure DOM is fully rendered
+              setTimeout(() => {
+                const rect = node.getBoundingClientRect();
+                console.log('Confetti trigger for card at:', rect.left, rect.top);
+                createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+              }, 150);
+            }
           }
         });
       });
     });
-    observer.observe(document.getElementById('wall'), { childList: true });
+    const wall = document.getElementById('wall');
+    if (wall) {
+      observer.observe(wall, { childList: true, subtree: false });
+      console.log('Confetti observer started for presentation mode');
+    }
   }
 })();
 </script>

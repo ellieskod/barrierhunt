@@ -164,8 +164,14 @@ body.present .emoji-btn { padding: 0.25rem 0.4rem; font-size: 0.8rem; }
   100% { transform: scale(1); background: #f5f5f5; }
 }
 @keyframes confettiFall {
-  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
-  100% { transform: translate(var(--tx), var(--ty)) rotate(360deg); opacity: 0; }
+  0% { 
+    transform: translate(0, 0) rotate(0deg); 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translate(var(--tx), var(--ty)) rotate(var(--rot, 360deg)); 
+    opacity: 0; 
+  }
 }
 .print.fresh { animation: drop .7s cubic-bezier(.2,.9,.3,1.2) both; }
 @keyframes drop {
@@ -253,7 +259,7 @@ dialog::backdrop { background: rgba(0,0,0,.4); }
 .dlg-body img { width: 100%; height: auto; max-height: 50vh; object-fit: contain; background: #e8e5dc; display: block; }
 body.present dialog { width: 80vw !important; max-width: 500px !important; height: 75vh !important; max-height: 75vh !important; position: fixed !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; margin: 0 !important; overflow: hidden !important; }
 body.present .dlg-head { flex-shrink: 0; }
-body.present .dlg-body { max-height: calc(75vh - 3.5rem) !important; overflow: hidden auto !important; flex: 1; }
+body.present .dlg-body { max-height: calc(75vh - 3.5rem) !important; overflow-y: auto !important; flex: 1; }
 body.present .dlg-body img { max-height: calc(75vh - 5rem) !important; max-width: 100% !important; width: 100% !important; height: auto !important; display: block !important; }
 .alt {
   margin: .75rem 0 0; padding: .6rem .8rem;
@@ -347,9 +353,12 @@ body.present .fab, body.present .add-top { display: none; }
 body.present .lane { display: none; }
 body.present main { padding: 0.5rem clamp(0.5rem, 2vw, 1.5rem) 2rem; }
 body.present .wall { columns: 280px; column-gap: 1rem; }
-body.present .print { margin: 0 0 1.5rem; padding: 8px; }
-body.present .print .where { margin: 0.5rem 0 0.3rem; font-size: 0.95rem; }
-body.present .print .meta { font-size: 0.8rem; }
+body.present .print { margin: 0 0 1.5rem; padding: 8px; max-width: 280px; display: flex; flex-direction: column; }
+body.present .print img { max-height: 250px; max-width: 100%; width: 100%; height: auto; object-fit: contain; flex-shrink: 0; }
+body.present .print .where { margin: 0.5rem 0 0.3rem; font-size: 0.95rem; flex-shrink: 0; }
+body.present .print .meta { font-size: 0.8rem; flex-shrink: 0; }
+body.present .reactions { gap: 0.2rem; margin-top: 0.3rem; font-size: 0.75rem; }
+body.present .emoji-btn { padding: 0.2rem 0.3rem; font-size: 0.7rem; flex-shrink: 0; }
 
 @media (max-width: 640px) {
   header.top { grid-template-columns: 1fr; }
