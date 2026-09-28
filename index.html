@@ -261,12 +261,14 @@
         ),
         el("div", { class: "reactions", id: "reactions-" + p.id },
           ["❤️", "😲", "🤯"].map(emoji => 
-            el("button", {
+            el("div", {
               class: "emoji-btn",
-              type: "button",
+              role: "button",
+              tabindex: "0",
               "data-emoji": emoji,
               "data-post-id": p.id,
               onclick: (e) => { e.stopPropagation(); addReaction(p.id, emoji); },
+              onkeydown: (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); addReaction(p.id, emoji); } },
               title: `React with ${emoji}`
             }, emoji + (p.reactions?.[emoji] || 0 ? ` ${p.reactions[emoji]}` : ""))
           )
