@@ -175,6 +175,14 @@ main { padding: 2rem clamp(1rem, 4vw, 3rem) 6rem; }
   to { opacity: 1; transform: translateX(0) scale(1); }
 }
 .thread li.new { animation: slideIn .3s ease-out; }
+
+/* Collapsible sections */
+.collapsible-section { margin: 1rem 0; }
+.collapsible-section h3 { margin: 0 0 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; }
+.collapsible-section h3::before { content: "▼"; display: inline-block; width: 1em; }
+.collapsible-section h3:hover { opacity: 0.7; }
+.collapsible-section.collapsed h3::before { content: "▶"; }
+.collapsible-section.collapsed .thread { display: none; }
 @keyframes slideIn {
   from { opacity: 0; transform: translateX(-15px) scale(0.95); }
   to { opacity: 1; transform: translateX(0) scale(1); }
@@ -297,7 +305,7 @@ fieldset { border: 0; margin: 0 0 1.1rem; padding: 0; }
 .toast {
   position: fixed; left: 50%; bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
   transform: translateX(-50%);
-  background: var(--line); color: white; font-weight: 700;
+  background: var(--ink-soft); color: white; font-weight: 700;
   padding: .9rem 1.5rem; border-radius: var(--radius);
   z-index: 20; display: none; box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }

@@ -106,11 +106,15 @@
     <h3>Why does it exist?</h3>
     <div class="votes" id="pVotes"></div>
 
-    <h3>Guerilla fixes</h3>
-    <ul class="thread" id="pFixes"></ul>
+    <div class="collapsible-section">
+      <h3 class="collapsible-toggle">Guerilla fixes</h3>
+      <ul class="thread" id="pFixes"></ul>
+    </div>
 
-    <h3>Comments</h3>
-    <ul class="thread" id="pComments"></ul>
+    <div class="collapsible-section">
+      <h3 class="collapsible-toggle">Comments</h3>
+      <ul class="thread" id="pComments"></ul>
+    </div>
 
     <form id="cForm" novalidate>
       <h3>Add to this</h3>
@@ -451,6 +455,13 @@
     $("#otherText").style.display = e.target.checked ? "" : "none";
   });
 
+  // collapsible sections in detail dialog
+  document.addEventListener("click", (e) => {
+    if (e.target.classList.contains("collapsible-toggle")) {
+      e.target.closest(".collapsible-section").classList.toggle("collapsed");
+    }
+  });
+
   // ---------- draggable mode (presentation) ----------
   if (present) {
     let draggedCard = null, startX = 0, startY = 0;
@@ -544,8 +555,9 @@
       let startX = 0, startY = 0;
       comment.addEventListener("mousedown", (e) => {
         isDragging = true;
-        startX = e.clientX - comment.offsetLeft;
-        startY = e.clientY - comment.offsetTop;
+        const rect = comment.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
       });
       document.addEventListener("mousemove", (e) => {
         if (isDragging) {
