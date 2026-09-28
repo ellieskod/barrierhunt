@@ -102,6 +102,18 @@ const server = http.createServer(async (req, res) => {
       } catch { res.writeHead(404); return res.end(); }
     }
 
+    if (req.method === "GET" && (url.pathname.endsWith(".png") || url.pathname.endsWith(".jpg") || url.pathname.endsWith(".jpeg") || url.pathname.endsWith(".gif"))) {
+      const filePath = path.join(__dirname, url.pathname);
+      if (!filePath.startsWith(__dirname)) { res.writeHead(404); return res.end(); }
+      try {
+        const content = fs.readFileSync(filePath);
+        const ext = path.extname(filePath);
+        const types = { ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".gif": "image/gif" };
+        res.writeHead(200, { "Content-Type": types[ext] || "image/png", "Cache-Control": "public, max-age=86400" });
+        return res.end(content);
+      } catch { res.writeHead(404); return res.end(); }
+    }
+
     if (req.method === "POST" && url.pathname === "/api/posts") {
       const b = await readBody(req);
       const m = /^data:(image\/(?:jpeg|png|webp));base64,(.+)$/.exec(b.image || "");
