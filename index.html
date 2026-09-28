@@ -440,6 +440,143 @@
   // refresh relative times occasionally
   setInterval(() => { if (openId) renderDetail(); }, 30000);
 
+  // ---------- draggable mode (presentation) ----------
+  let draggedElement = null;
+  let offsetX = 0, offsetY = 0;
+  let elementPositions = {};
+  try { elementPositions = JSON.parse(sessionStorage.getItem("bh-positions") || "{}"); } catch {}
+
+  function makeDraggable(el) {
+    el.draggable = true;
+    el.addEventListener("dragstart", (e) => {
+      draggedElement = el;
+      el.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/html", el.innerHTML);
+    });
+    el.addEventListener("dragend", () => {
+      el.classList.remove("dragging");
+      draggedElement = null;
+    });
+  }
+
+  function savePositions() {
+    try { sessionStorage.setItem("bh-positions", JSON.stringify(elementPositions)); } catch {}
+  }
+
+  function restorePositions() {
+    Object.entries(elementPositions).forEach(([id, pos]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.style.position = "fixed";
+        el.style.left = pos.x + "px";
+        el.style.top = pos.y + "px";
+        el.style.zIndex = pos.z || 100;
+      }
+    });
+  }
+
+  // Allow dropping on wall
+  const wall = $("#wall");
+  wall.addEventListener("dragover", (e) => e.preventDefault());
+  wall.addEventListener("drop", (e) => {
+    e.preventDefault();
+    if (draggedElement) {
+      const rect = wall.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      draggedElement.style.position = "fixed";
+      draggedElement.style.left = (e.clientX - 150) + "px";
+      draggedElement.style.top = (e.clientY - 100) + "px";
+      draggedElement.style.zIndex = 100;
+      elementPositions[draggedElement.id || "elem-" + Date.now()] = {
+        x: e.clientX - 150,
+        y: e.clientY - 100,
+        z: 100
+      };
+      savePositions();
+    }
+  });
+
+  // Make cards draggable in presentation mode
+  if (present) {
+    const observer = new MutationObserver(() => {
+      document.querySelectorAll(".print").forEach(card => {
+        if (!card.draggable) makeDraggable(card);
+      });
+    });
+    observer.observe(wall, { childList: true });
+    
+    restorePositions();
+
+    // Add floating comment tool
+    const commentTool = el("div", { style: "position: fixed; right: 2rem; bottom: 2rem; z-index: 50;" },
+      el("button", {
+        class: "btn btn-primary",
+        type: "button",
+        onclick: () => addFloatingComment(),
+        style: "border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 2rem; padding: 0;"
+      }, "💬")
+    );
+    document.body.appendChild(commentTool);
+
+    window.addFloatingComment = function() {
+      const x = Math.random() * (window.innerWidth - 300);
+      const y = Math.random() * (window.innerHeight - 200);
+      const comment = el("div", {
+        class: "paint-comment",
+        id: "comment-" + Date.now(),
+        style: `left: ${x}px; top: ${y}px;`
+      },
+        el("textarea", {
+          placeholder: "Add a thought...",
+          maxlength: "200",
+          style: "width: 100%; border: none; resize: none; height: 80px; font-family: inherit; font-size: 0.95rem;"
+        }),
+        el("div", { style: "margin-top: 0.5rem; display: flex; gap: 0.5rem;" },
+          el("button", {
+            class: "btn btn-primary",
+            type: "button",
+            style: "flex: 1; padding: 0.5rem; font-size: 0.85rem;",
+            onclick: (e) => {
+              const text = e.target.parentElement.parentElement.querySelector("textarea").value;
+              if (text.trim()) {
+                e.target.parentElement.parentElement.style.background = "var(--line)";
+                e.target.parentElement.parentElement.style.color = "white";
+                e.target.parentElement.parentElement.querySelector("textarea").disabled = true;
+                toast("💭 Thought added");
+              }
+            }
+          }, "Save"),
+          el("button", {
+            class: "btn btn-ghost",
+            type: "button",
+            style: "flex: 1; padding: 0.5rem; font-size: 0.85rem;",
+            onclick: (e) => e.target.parentElement.parentElement.remove()
+          }, "Delete")
+        )
+      );
+      
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      comment.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        startX = e.clientX - comment.offsetLeft;
+        startY = e.clientY - comment.offsetTop;
+      });
+      document.addEventListener("mousemove", (e) => {
+        if (isDragging) {
+          comment.style.left = (e.clientX - startX) + "px";
+          comment.style.top = (e.clientY - startY) + "px";
+        }
+      });
+      document.addEventListener("mouseup", () => { isDragging = false; });
+      
+      document.body.appendChild(comment);
+      comment.querySelector("textarea").focus();
+    };
+  }
+
   load();
   connect();
 })();
