@@ -132,7 +132,7 @@ const server = http.createServer(async (req, res) => {
       const name = clean(b.name, 40);
       if (fix) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "fix", text: fix, name, createdAt: Date.now() });
       if (otherComment) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "comment", text: `Other: ${otherComment}`, name, createdAt: Date.now() });
-      posts.push({ id, createdAt: Date.now(), alt, where, name, tags, comments });
+      posts.push({ id, createdAt: Date.now(), alt, where, name, tags, comments, reactions: {} });
       while (posts.length > MAX_POSTS) images.delete(posts.shift().id);
       bump();
       return send(res, 201, { id });
@@ -159,6 +159,18 @@ const server = http.createServer(async (req, res) => {
         bump();
         return send(res, 200, { ok: true });
       }
+    }
+
+    if (req.method === "POST" && parts[0] === "api" && parts[1] === "posts" && parts[2] === "reactions") {
+      const p = posts.find(x => x.id === parts[3]);
+      if (!p) return send(res, 404, { error: "Post not found." });
+      const b = await readBody(req);
+      const emoji = b.emoji && typeof b.emoji === "string" ? b.emoji.slice(0, 5) : "";
+      if (!emoji) return send(res, 400, { error: "Invalid emoji." });
+      if (!p.reactions) p.reactions = {};
+      p.reactions[emoji] = (p.reactions[emoji] || 0) + 1;
+      bump();
+      return send(res, 200, { ok: true });
     }
 
     if (req.method === "DELETE" && parts[0] === "api" && parts[1] === "posts" && parts[2]) {

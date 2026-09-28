@@ -256,8 +256,20 @@
         el("img", { src: "/img/" + p.id, alt: p.alt, loading: "lazy" }),
         el("p", { class: "where", text: p.where }),
         el("div", { class: "meta" },
-          top.map(t => el("span", { class: "chip", style: `--c:${t.color}` }, `${t.label} ${p.tags[t.key]}`)),
+          top.map(t => el("span", { class: "chip", style: `--c:${t.color}` }, t.label)),
           el("span", { class: "counts", text: `${fixes} fix${fixes === 1 ? "" : "es"}, ${comms} comment${comms === 1 ? "" : "s"}` })
+        ),
+        el("div", { class: "reactions", id: "reactions-" + p.id },
+          ["❤️", "😲", "🤯"].map(emoji => 
+            el("button", {
+              class: "emoji-btn",
+              type: "button",
+              "data-emoji": emoji,
+              "data-post-id": p.id,
+              onclick: (e) => { e.stopPropagation(); addReaction(p.id, emoji); },
+              title: `React with ${emoji}`
+            }, emoji + (p.reactions?.[emoji] || 0 ? ` ${p.reactions[emoji]}` : ""))
+          )
         )
       );
       frag.append(card);
@@ -300,6 +312,13 @@
   }
 
   function renderAll() { renderLane(); renderWall(); renderDetail(); }
+
+  async function addReaction(postId, emoji) {
+    try {
+      await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
+      load();
+    } catch (e) { toast(e.message); }
+  }
 
   let loading = false, again = false;
   async function load() {
