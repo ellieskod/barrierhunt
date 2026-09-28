@@ -392,8 +392,6 @@ body.present .print { margin: 0 0 1.5rem; padding: 8px; max-width: 280px; displa
 body.present .print img { max-height: 250px; max-width: 100%; width: 100%; height: auto; object-fit: contain; flex-shrink: 0; }
 body.present .print .where { margin: 0.5rem 0 0.3rem; font-size: 0.95rem; flex-shrink: 0; }
 body.present .print .meta { font-size: 0.8rem; flex-shrink: 0; }
-body.present .reactions { gap: 0.2rem; margin-top: 0.3rem; font-size: 0.75rem; }
-body.present .emoji-btn { padding: 0.2rem 0.3rem; font-size: 0.7rem; flex-shrink: 0; }
 
 @media (max-width: 640px) {
   header.top { grid-template-columns: 1fr; }
