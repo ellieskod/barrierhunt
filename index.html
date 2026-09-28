@@ -29,7 +29,7 @@
 <div class="lane" id="lane" role="img" aria-label="No reasons tagged yet"></div>
 <div class="legend">
   <span style="--c:var(--t-ignorance)">Ignorance: nobody knew or thought about it</span>
-  <span style="--c:var(--t-profit)">Profit: cheaper, faster, or sells more</span>
+  <span style="--c:var(--t-cost)">Cost: cheaper, faster, or sells more</span>
   <span style="--c:var(--t-normative)">Normative view: assumes a "normal" body, or a helper</span>
 </div>
 
@@ -68,9 +68,11 @@
         <span class="hint">Pick any that fit. Others can vote too.</span></legend>
       <div class="checks">
         <label class="check" style="--c:var(--t-ignorance)"><input type="checkbox" name="tag" value="ignorance"><span><b>Ignorance</b>Nobody knew or thought about it</span></label>
-        <label class="check" style="--c:var(--t-profit)"><input type="checkbox" name="tag" value="profit"><span><b>Profit</b>Cheaper, faster, or sells more</span></label>
+        <label class="check" style="--c:var(--t-cost)"><input type="checkbox" name="tag" value="cost"><span><b>Cost</b>Cheaper, faster, or sells more</span></label>
         <label class="check" style="--c:var(--t-normative)"><input type="checkbox" name="tag" value="normative"><span><b>Normative view</b>Assumes a "normal" body, or a helper</span></label>
+        <label class="check" style="--c:#99999a"><input type="checkbox" id="otherCheck" name="tag" value="other"><span><b>Other</b>What do you think?</span></label>
       </div>
+      <textarea id="otherText" placeholder="Explain your other reason..." maxlength="300" style="display:none; margin-top: 0.5rem;"></textarea>
     </fieldset>
     <div class="field">
       <label for="fix">Guerilla fix (optional)
@@ -143,7 +145,7 @@
 (() => {
   const TAGS = [
     { key: "ignorance", label: "Ignorance", color: "var(--t-ignorance)" },
-    { key: "profit", label: "Profit", color: "var(--t-profit)" },
+    { key: "cost", label: "Cost", color: "var(--t-cost)" },
     { key: "normative", label: "Normative view", color: "var(--t-normative)" }
   ];
   const $ = s => document.querySelector(s);
@@ -167,7 +169,7 @@
   if (present) {
     document.body.classList.add("present");
     const joinUrl = location.origin + location.pathname;
-    if (window.QRCode) new QRCode($("#qr"), { text: joinUrl, width: 150, height: 150, colorDark: "#1b1c1e", colorLight: "#ffffff" });
+    if (window.QRCode) new QRCode($("#qr"), { text: joinUrl, width: 105, height: 105, colorDark: "#1b1c1e", colorLight: "#ffffff" });
     else $("#qr").hidden = true;
   }
 
@@ -403,14 +405,19 @@
     const btn = $("#addBtn"); btn.disabled = true; btn.textContent = "Posting…";
     const name = $("#name").value.trim(); rememberName(name);
     try {
-      const { id } = await api("/api/posts", { method: "POST", body: JSON.stringify({
+      const payload = {
         image: photoData, alt, where, name,
         fix: $("#fix").value.trim(),
         tags: [...document.querySelectorAll('input[name=tag]:checked')].map(i => i.value)
-      })});
+      };
+      if ($("#otherCheck").checked) {
+        payload.otherComment = $("#otherText").value.trim();
+      }
+      const { id } = await api("/api/posts", { method: "POST", body: JSON.stringify(payload) });
       const tagged = [...document.querySelectorAll('input[name=tag]:checked')].map(i => i.value);
       if (tagged.length) { myVotes[id] = tagged; saveVotes(); }
       $("#addForm").reset(); $("#name").value = name;
+      $("#otherText").style.display = "none";
       photoData = ""; $("#pick").querySelector("img")?.remove(); $("#pickText").textContent = "Take or choose a photo";
       $("#addDlg").close();
       toast("Posted to the wall");
@@ -439,6 +446,11 @@
   // refresh relative times occasionally
   setInterval(() => { if (openId) renderDetail(); }, 30000);
 
+  // toggle "other" text field
+  $("#otherCheck").addEventListener("change", (e) => {
+    $("#otherText").style.display = e.target.checked ? "" : "none";
+  });
+
   // ---------- draggable mode (presentation) ----------
   if (present) {
     let draggedCard = null, startX = 0, startY = 0;
@@ -446,9 +458,12 @@
     function enableDrag(card) {
       card.addEventListener("mousedown", (e) => {
         draggedCard = card;
-        startX = e.clientX - card.offsetLeft;
-        startY = e.clientY - card.offsetTop;
+        const rect = card.getBoundingClientRect();
+        startX = e.clientX - rect.left;
+        startY = e.clientY - rect.top;
         card.style.position = "fixed";
+        card.style.left = rect.left + "px";
+        card.style.top = rect.top + "px";
         card.style.zIndex = 1000;
         card.classList.add("dragging");
       });

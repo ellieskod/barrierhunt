@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 3000;
 const ADMIN_KEY = process.env.ADMIN_KEY || "asecretkey";
 const MAX_POSTS = 300;
 const MAX_BODY = 8 * 1024 * 1024;
-const TAGS = ["ignorance", "profit", "normative"];
+const TAGS = ["ignorance", "cost", "normative"];
 
 let posts = [];            // newest last
 const images = new Map();  // id -> { buf, type }
@@ -124,12 +124,14 @@ const server = http.createServer(async (req, res) => {
       if (!where) return send(res, 400, { error: "Describe the barrier and where it is." });
       const id = crypto.randomBytes(6).toString("hex");
       images.set(id, { buf: Buffer.from(m[2], "base64"), type: m[1] });
-      const tags = { ignorance: 0, profit: 0, normative: 0 };
+      const tags = { ignorance: 0, cost: 0, normative: 0 };
       (Array.isArray(b.tags) ? b.tags : []).forEach(t => { if (TAGS.includes(t)) tags[t] = 1; });
       const comments = [];
       const fix = clean(b.fix, 500);
+      const otherComment = clean(b.otherComment, 300);
       const name = clean(b.name, 40);
       if (fix) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "fix", text: fix, name, createdAt: Date.now() });
+      if (otherComment) comments.push({ id: crypto.randomBytes(4).toString("hex"), kind: "comment", text: `Other: ${otherComment}`, name, createdAt: Date.now() });
       posts.push({ id, createdAt: Date.now(), alt, where, name, tags, comments });
       while (posts.length > MAX_POSTS) images.delete(posts.shift().id);
       bump();
