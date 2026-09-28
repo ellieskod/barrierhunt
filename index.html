@@ -21,7 +21,7 @@
     <button class="btn btn-primary add-top" type="button" data-open-add>Add a barrier</button>
     <div class="join" aria-label="Join from your phone">
       <div class="qr" id="qr"></div>
-      <p>Scan to join<strong id="joinUrl"></strong></p>
+      <p>Scan to join</p>
     </div>
   </div>
 </header>
@@ -441,73 +441,42 @@
   setInterval(() => { if (openId) renderDetail(); }, 30000);
 
   // ---------- draggable mode (presentation) ----------
-  let draggedElement = null;
-  let offsetX = 0, offsetY = 0;
-  let elementPositions = {};
-  try { elementPositions = JSON.parse(sessionStorage.getItem("bh-positions") || "{}"); } catch {}
+  if (present) {
+    let draggedCard = null, startX = 0, startY = 0;
 
-  function makeDraggable(el) {
-    el.draggable = true;
-    el.addEventListener("dragstart", (e) => {
-      draggedElement = el;
-      el.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/html", el.innerHTML);
-    });
-    el.addEventListener("dragend", () => {
-      el.classList.remove("dragging");
-      draggedElement = null;
-    });
-  }
+    function enableDrag(card) {
+      card.addEventListener("mousedown", (e) => {
+        draggedCard = card;
+        startX = e.clientX - card.offsetLeft;
+        startY = e.clientY - card.offsetTop;
+        card.style.position = "fixed";
+        card.style.zIndex = 1000;
+        card.classList.add("dragging");
+      });
+    }
 
-  function savePositions() {
-    try { sessionStorage.setItem("bh-positions", JSON.stringify(elementPositions)); } catch {}
-  }
-
-  function restorePositions() {
-    Object.entries(elementPositions).forEach(([id, pos]) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.style.position = "fixed";
-        el.style.left = pos.x + "px";
-        el.style.top = pos.y + "px";
-        el.style.zIndex = pos.z || 100;
+    document.addEventListener("mousemove", (e) => {
+      if (draggedCard) {
+        draggedCard.style.left = (e.clientX - startX) + "px";
+        draggedCard.style.top = (e.clientY - startY) + "px";
       }
     });
-  }
 
-  // Allow dropping on wall
-  const wall = $("#wall");
-  wall.addEventListener("dragover", (e) => e.preventDefault());
-  wall.addEventListener("drop", (e) => {
-    e.preventDefault();
-    if (draggedElement) {
-      const rect = wall.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-      draggedElement.style.position = "fixed";
-      draggedElement.style.left = (e.clientX - 150) + "px";
-      draggedElement.style.top = (e.clientY - 100) + "px";
-      draggedElement.style.zIndex = 100;
-      elementPositions[draggedElement.id || "elem-" + Date.now()] = {
-        x: e.clientX - 150,
-        y: e.clientY - 100,
-        z: 100
-      };
-      savePositions();
-    }
-  });
+    document.addEventListener("mouseup", () => {
+      if (draggedCard) draggedCard.classList.remove("dragging");
+      draggedCard = null;
+    });
 
-  // Make cards draggable in presentation mode
-  if (present) {
+    const wall = $("#wall");
     const observer = new MutationObserver(() => {
-      document.querySelectorAll(".print").forEach(card => {
-        if (!card.draggable) makeDraggable(card);
+      document.querySelectorAll(".print:not([draggable])").forEach(card => {
+        enableDrag(card);
+        card.draggable = true;
       });
     });
-    observer.observe(wall, { childList: true });
+    observer.observe(wall, { childList: true, subtree: true });
     
-    restorePositions();
+    document.querySelectorAll(".print").forEach(enableDrag);
 
     // Add floating comment tool
     const commentTool = el("div", { style: "position: fixed; right: 2rem; bottom: 2rem; z-index: 50;" },

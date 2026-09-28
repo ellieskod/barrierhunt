@@ -50,8 +50,8 @@ header.top {
   line-height: .9;
   letter-spacing: .01em;
   margin: 0;
-  color: white;
-  background: var(--line);
+  color: var(--ink);
+  background: transparent;
   padding: 1rem;
   border-radius: var(--radius);
   width: fit-content;
@@ -303,11 +303,19 @@ fieldset { border: 0; margin: 0 0 1.1rem; padding: 0; }
 .toast.show { display: block; }
 
 /* ---------- present mode (projector) ---------- */
-body.present .join { display: flex; }
+body.present header.top { padding: 0.75rem clamp(0.5rem, 2vw, 1.5rem); }
+body.present .title { font-size: clamp(1.5rem, 4vw, 2.5rem); padding: 0.5rem; }
+body.present .lede { display: none; }
+body.present .join { display: flex; gap: 0.75rem; align-items: center; }
+body.present .join p { margin: 0; font-size: 0.9rem; }
+body.present .join .qr { padding: 6px; width: 100px; height: 100px; }
 body.present .fab, body.present .add-top { display: none; }
 body.present .lane { display: none; }
-body.present .wall { columns: 340px; }
-body.present .title { font-size: clamp(2.5rem, 9vw, 5rem); }
+body.present main { padding: 0.5rem clamp(0.5rem, 2vw, 1.5rem) 2rem; }
+body.present .wall { columns: 280px; column-gap: 1rem; }
+body.present .print { margin: 0 0 1.5rem; padding: 8px; }
+body.present .print .where { margin: 0.5rem 0 0.3rem; font-size: 0.95rem; }
+body.present .print .meta { font-size: 0.8rem; }
 
 @media (max-width: 640px) {
   header.top { grid-template-columns: 1fr; }
