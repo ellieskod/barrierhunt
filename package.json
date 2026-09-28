@@ -1,0 +1,8 @@
+{
+  "name": "barrier-hunt",
+  "version": "1.0.0",
+  "description": "Live photo wall for an accessibility lecture. In-memory, no database.",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "engines": { "node": ">=18" }
+}

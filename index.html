@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barrier hunt</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Big+Shoulders+Stencil+Display:wght@800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1 class="title">Barrier<br>hunt</h1>
+    <p class="lede">Find something that shuts people out. Photograph it, say why it exists, and propose a guerilla fix you could do this week.</p>
+  </div>
+  <div>
+    <button class="btn btn-primary add-top" type="button" data-open-add>Add a barrier</button>
+    <div class="join" aria-label="Join from your phone">
+      <div class="qr" id="qr"></div>
+      <p>Scan to join<strong id="joinUrl"></strong></p>
+    </div>
+  </div>
+</header>
+
+<div class="lane" id="lane" role="img" aria-label="No reasons tagged yet"></div>
+<div class="legend">
+  <span style="--c:var(--t-ignorance)">Ignorance: nobody knew or thought about it</span>
+  <span style="--c:var(--t-profit)">Profit: cheaper, faster, or sells more</span>
+  <span style="--c:var(--t-normative)">Normative view: assumes a "normal" body, or a helper</span>
+</div>
+
+<main>
+  <h2 class="sr-only">Photos on the wall</h2>
+  <div class="wall" id="wall" aria-live="polite"></div>
+</main>
+
+<button class="btn btn-primary fab" type="button" data-open-add>Add a barrier</button>
+
+<!-- add dialog -->
+<dialog id="addDlg" aria-labelledby="addTitle">
+  <div class="dlg-head">
+    <h2 id="addTitle">Add a barrier</h2>
+    <button class="btn close" type="button" data-close aria-label="Close">✕</button>
+  </div>
+  <form class="dlg-body" id="addForm" novalidate>
+    <div class="field">
+      <label class="photo-pick" id="pick">
+        <input type="file" id="photo" accept="image/*">
+        <span id="pickText">Take or choose a photo</span>
+      </label>
+    </div>
+    <div class="field">
+      <label for="alt">Alt text
+        <span class="hint">Describe the photo for someone who can't see it.</span></label>
+      <textarea id="alt" required maxlength="400"></textarea>
+    </div>
+    <div class="field">
+      <label for="where">What's the barrier, and where?
+        <span class="hint">For example: "Touchscreen-only ticket machine, Umeå C, no buttons or audio."</span></label>
+      <input type="text" id="where" required maxlength="300">
+    </div>
+    <fieldset>
+      <legend>Why does it exist?
+        <span class="hint">Pick any that fit. Others can vote too.</span></legend>
+      <div class="checks">
+        <label class="check" style="--c:var(--t-ignorance)"><input type="checkbox" name="tag" value="ignorance"><span><b>Ignorance</b>Nobody knew or thought about it</span></label>
+        <label class="check" style="--c:var(--t-profit)"><input type="checkbox" name="tag" value="profit"><span><b>Profit</b>Cheaper, faster, or sells more</span></label>
+        <label class="check" style="--c:var(--t-normative)"><input type="checkbox" name="tag" value="normative"><span><b>Normative view</b>Assumes a "normal" body, or a helper</span></label>
+      </div>
+    </fieldset>
+    <div class="field">
+      <label for="fix">Guerilla fix (optional)
+        <span class="hint">Cheap, unofficial, doable this week. Add emojis to show your creativity! 💪 ✨ 🔧</span></label>
+      <textarea id="fix" maxlength="550"></textarea>
+    </div>
+    <div class="field">
+      <label for="name">Your name (optional)</label>
+      <input type="text" id="name" maxlength="40" autocomplete="nickname">
+    </div>
+    <p class="error" id="addErr" role="alert"></p>
+    <div class="actions">
+      <button class="btn btn-ghost" type="button" data-close style="color:var(--ink);border-color:#bdb9ae">Cancel</button>
+      <button class="btn btn-ink" type="submit" id="addBtn">Post to wall</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- detail dialog -->
+<dialog id="postDlg" aria-labelledby="postTitle">
+  <div class="dlg-head">
+    <h2 id="postTitle">Barrier</h2>
+    <button class="btn close" type="button" data-close aria-label="Close">✕</button>
+  </div>
+  <div class="dlg-body">
+    <img id="pImg" alt="">
+    <p class="alt"><b>Alt text</b><span id="pAlt"></span></p>
+    <p class="big-where" id="pWhere"></p>
+    <p class="byline" id="pBy"></p>
+
+    <h3>Why does it exist?</h3>
+    <div class="votes" id="pVotes"></div>
+
+    <h3>Guerilla fixes</h3>
+    <ul class="thread" id="pFixes"></ul>
+
+    <h3>Comments</h3>
+    <ul class="thread" id="pComments"></ul>
+
+    <form id="cForm" novalidate>
+      <h3>Add to this</h3>
+      <fieldset>
+        <legend class="sr-only">Type</legend>
+        <div class="kinds">
+          <label class="check"><input type="radio" name="kind" value="comment" checked><span><b>Comment</b></span></label>
+          <label class="check"><input type="radio" name="kind" value="fix"><span><b>Guerilla fix</b></span></label>
+        </div>
+      </fieldset>
+      <div class="field">
+        <label for="cText">Your text
+          <span class="hint">Add emojis to react: 👍 🤦 ❤️ 💡 ✨ etc.</span></label>
+        <textarea id="cText" maxlength="550"></textarea>
+      </div>
+      <div class="field">
+        <label for="cName">Your name (optional)</label>
+        <input type="text" id="cName" maxlength="40" autocomplete="nickname">
+      </div>
+      <p class="error" id="cErr" role="alert"></p>
+      <div class="actions">
+        <button class="btn btn-ghost" type="button" id="delPost" hidden style="color:#a3261a;border-color:#a3261a">Delete photo</button>
+        <button class="btn btn-ink" type="submit" id="cBtn">Post</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(() => {
+  const TAGS = [
+    { key: "ignorance", label: "Ignorance", color: "var(--t-ignorance)" },
+    { key: "profit", label: "Profit", color: "var(--t-profit)" },
+    { key: "normative", label: "Normative view", color: "var(--t-normative)" }
+  ];
+  const $ = s => document.querySelector(s);
+  const el = (tag, props = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (k === "style") n.style.cssText = v;
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (k === "text") n.textContent = v;
+      else n.setAttribute(k, v);
+    }
+    kids.flat().forEach(c => c != null && n.append(c));
+    return n;
+  };
+
+  const params = new URLSearchParams(location.search);
+  const present = params.has("present");
+  let adminKey = params.get("admin") || "";
+  try { if (adminKey) sessionStorage.setItem("bh-admin", adminKey); else adminKey = sessionStorage.getItem("bh-admin") || ""; } catch {}
+
+  if (present) {
+    document.body.classList.add("present");
+    const joinUrl = location.origin + location.pathname;
+    $("#joinUrl").textContent = joinUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (window.QRCode) new QRCode($("#qr"), { text: joinUrl, width: 150, height: 150, colorDark: "#1b1c1e", colorLight: "#ffffff" });
+    else $("#qr").hidden = true;
+  }
+
+  // ---------- local memory of own votes ----------
+  let myVotes = {};
+  try { myVotes = JSON.parse(localStorage.getItem("bh-votes") || "{}"); } catch {}
+  const saveVotes = () => { try { localStorage.setItem("bh-votes", JSON.stringify(myVotes)); } catch {} };
+  const savedName = (() => { try { return localStorage.getItem("bh-name") || ""; } catch { return ""; } })();
+  $("#name").value = savedName; $("#cName").value = savedName;
+  const rememberName = n => { try { localStorage.setItem("bh-name", n); } catch {} };
+
+  // ---------- helpers ----------
+  const hash = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+  const ago = t => {
+    const s = Math.round((Date.now() - t) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + " min ago";
+    return Math.floor(s / 3600) + " h ago";
+  };
+  function toast(msg) {
+    const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 2500);
+  }
+  async function api(path, opts = {}) {
+    const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+    let data = {}; try { data = await res.json(); } catch {}
+    if (!res.ok) throw new Error(data.error || "Couldn't reach the server. Check your connection and try again.");
+    return data;
+  }
+
+  // ---------- state + rendering ----------
+  let posts = [];
+  const seen = new Set();
+  let firstLoad = true;
+  let openId = null;
+
+  function renderLane() {
+    const totals = TAGS.map(t => ({ ...t, n: posts.reduce((a, p) => a + (p.tags[t.key] || 0), 0) }));
+    const sum = totals.reduce((a, t) => a + t.n, 0);
+    const lane = $("#lane");
+    lane.replaceChildren();
+    if (!sum) {
+      lane.append(el("div", { class: "empty" }, "No reasons tagged yet"));
+      lane.setAttribute("aria-label", "No reasons tagged yet");
+      return;
+    }
+    totals.forEach(t => {
+      if (!t.n) return;
+      lane.append(el("div", { style: `background:${t.color};flex-grow:${t.n}` },
+        el("span", { class: "n", text: String(t.n) }), el("span", { class: "label", text: t.label })));
+    });
+    lane.setAttribute("aria-label", "Reasons tagged so far: " + totals.map(t => `${t.label} ${t.n}`).join(", "));
+  }
+
+  function renderWall() {
+    const wall = $("#wall");
+    if (!posts.length) {
+      wall.style.columns = "auto";
+      wall.replaceChildren(el("div", { class: "empty-wall" },
+        el("p", { text: "The wall is empty. Go find a barrier." }),
+        present ? null : el("button", { class: "btn btn-primary", type: "button", onclick: openAdd }, "Add the first one")));
+      return;
+    }
+    wall.style.columns = "";
+    const frag = document.createDocumentFragment();
+    posts.forEach(p => {
+      const h = hash(p.id);
+      const r = ((h % 7) - 3) * 0.6;
+      const tr = ((h >> 3) % 9) - 4;
+      const fixes = p.comments.filter(c => c.kind === "fix").length;
+      const comms = p.comments.length - fixes;
+      const top = TAGS.filter(t => p.tags[t.key] > 0);
+      const card = el("button", {
+          class: "print" + (!firstLoad && !seen.has(p.id) ? " fresh" : ""),
+          type: "button",
+          style: `--r:${r}deg;--tr:${tr}deg`,
+          "aria-label": `${p.where}. Open for details, reasons, fixes and comments.`,
+          onclick: () => openPost(p.id)
+        },
+        el("img", { src: "/img/" + p.id, alt: p.alt, loading: "lazy" }),
+        el("p", { class: "where", text: p.where }),
+        el("div", { class: "meta" },
+          top.map(t => el("span", { class: "chip", style: `--c:${t.color}` }, `${t.label} ${p.tags[t.key]}`)),
+          el("span", { class: "counts", text: `${fixes} fix${fixes === 1 ? "" : "es"}, ${comms} comment${comms === 1 ? "" : "s"}` })
+        )
+      );
+      frag.append(card);
+      seen.add(p.id);
+    });
+    wall.replaceChildren(frag);
+    firstLoad = false;
+  }
+
+  function renderDetail() {
+    if (!openId) return;
+    const p = posts.find(x => x.id === openId);
+    if (!p) { $("#postDlg").close(); toast("That photo was removed."); return; }
+    $("#pImg").src = "/img/" + p.id;
+    $("#pImg").alt = p.alt;
+    $("#pAlt").textContent = p.alt;
+    $("#pWhere").textContent = p.where;
+    $("#pBy").textContent = (p.name ? p.name + ", " : "") + ago(p.createdAt);
+
+    const mine = myVotes[p.id] || [];
+    $("#pVotes").replaceChildren(...TAGS.map(t => el("button", {
+        class: "vote", type: "button", style: `--c:${t.color}`,
+        "aria-pressed": String(mine.includes(t.key)),
+        onclick: () => vote(p.id, t.key)
+      },
+      el("span", { class: "n", text: String(p.tags[t.key] || 0) }),
+      el("span", {}, t.label, el("small", { text: mine.includes(t.key) ? "Your vote. Press to remove" : "Press to agree" }))
+    )));
+
+    const item = c => el("li", { class: c.kind },
+      el("div", { text: c.text }),
+      el("div", { class: "who" },
+        el("span", { text: (c.name || "Anonymous") + ", " + ago(c.createdAt) }),
+        adminKey ? el("button", { class: "del", type: "button", onclick: () => delComment(p.id, c.id) }, "Delete") : null));
+    const fixes = p.comments.filter(c => c.kind === "fix");
+    const comms = p.comments.filter(c => c.kind !== "fix");
+    $("#pFixes").replaceChildren(...(fixes.length ? fixes.map(item) : [el("li", { class: "none", text: "No fixes yet. Propose one below." })]));
+    $("#pComments").replaceChildren(...(comms.length ? comms.map(item) : [el("li", { class: "none", text: "No comments yet." })]));
+    $("#delPost").hidden = !adminKey;
+  }
+
+  function renderAll() { renderLane(); renderWall(); renderDetail(); }
+
+  let loading = false, again = false;
+  async function load() {
+    if (loading) { again = true; return; }
+    loading = true;
+    try {
+      const data = await api("/api/posts");
+      posts = data.posts;
+      renderAll();
+    } catch (e) { /* keep showing what we have */ }
+    loading = false;
+    if (again) { again = false; load(); }
+  }
+
+  // live updates: server-sent events, with polling as a fallback
+  function connect() {
+    try {
+      const es = new EventSource("/events");
+      es.onmessage = () => load();
+      es.onerror = () => { es.close(); setTimeout(connect, 4000); };
+    } catch {}
+  }
+  setInterval(load, 20000);
+
+  // ---------- actions ----------
+  async function vote(id, tag) {
+    const mine = myVotes[id] || [];
+    const has = mine.includes(tag);
+    try {
+      await api(`/api/posts/${id}/vote`, { method: "POST", body: JSON.stringify({ tag, delta: has ? -1 : 1 }) });
+      myVotes[id] = has ? mine.filter(t => t !== tag) : [...mine, tag];
+      saveVotes();
+      load();
+    } catch (e) { toast(e.message); }
+  }
+  async function delComment(pid, cid) {
+    if (!confirm("Delete this text?")) return;
+    try { await api(`/api/posts/${pid}/comments/${cid}?key=${encodeURIComponent(adminKey)}`, { method: "DELETE" }); load(); }
+    catch (e) { toast(e.message); }
+  }
+  $("#delPost").addEventListener("click", async () => {
+    if (!openId || !confirm("Delete this photo from the wall?")) return;
+    try { await api(`/api/posts/${openId}?key=${encodeURIComponent(adminKey)}`, { method: "DELETE" }); $("#postDlg").close(); toast("Photo deleted"); load(); }
+    catch (e) { toast(e.message); }
+  });
+
+  // ---------- dialogs ----------
+  let lastFocus = null;
+  function openAdd() { lastFocus = document.activeElement; $("#addErr").textContent = ""; $("#addDlg").showModal(); }
+  function openPost(id) {
+    lastFocus = document.activeElement;
+    openId = id; $("#cErr").textContent = "";
+    renderDetail();
+    $("#postDlg").showModal();
+    $("#postDlg .dlg-body").scrollTop = 0;
+  }
+  document.querySelectorAll("[data-open-add]").forEach(b => b.addEventListener("click", openAdd));
+  document.querySelectorAll("dialog").forEach(d => {
+    d.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => d.close()));
+    d.addEventListener("click", e => { if (e.target === d) d.close(); });
+    d.addEventListener("close", () => { if (d.id === "postDlg") openId = null; if (lastFocus) lastFocus.focus(); });
+  });
+
+  // ---------- photo: downscale before upload ----------
+  let photoData = "";
+  function loadImage(file) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("That file couldn't be read as an image. Try a JPEG or PNG.")); };
+      img.src = url;
+    });
+  }
+  $("#photo").addEventListener("change", async e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    $("#pickText").textContent = "Preparing photo…";
+    try {
+      const img = await loadImage(file);
+      const max = 1400;
+      const scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.naturalWidth * scale);
+      c.height = Math.round(img.naturalHeight * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      photoData = c.toDataURL("image/jpeg", 0.8);
+      const pick = $("#pick");
+      pick.querySelector("img")?.remove();
+      $("#pickText").textContent = "Change photo";
+      pick.insertBefore(el("img", { src: photoData, alt: "Preview of your photo" }), $("#pickText"));
+    } catch (err) {
+      photoData = "";
+      $("#pickText").textContent = "Take or choose a photo";
+      $("#addErr").textContent = err.message;
+    }
+  });
+
+  $("#addForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = $("#addErr");
+    const alt = $("#alt").value.trim(), where = $("#where").value.trim();
+    if (!photoData) { err.textContent = "Add a photo first."; $("#photo").focus(); return; }
+    if (!alt) { err.textContent = "Write alt text for the photo."; $("#alt").focus(); return; }
+    if (!where) { err.textContent = "Describe the barrier and where it is."; $("#where").focus(); return; }
+    err.textContent = "";
+    const btn = $("#addBtn"); btn.disabled = true; btn.textContent = "Posting…";
+    const name = $("#name").value.trim(); rememberName(name);
+    try {
+      const { id } = await api("/api/posts", { method: "POST", body: JSON.stringify({
+        image: photoData, alt, where, name,
+        fix: $("#fix").value.trim(),
+        tags: [...document.querySelectorAll('input[name=tag]:checked')].map(i => i.value)
+      })});
+      const tagged = [...document.querySelectorAll('input[name=tag]:checked')].map(i => i.value);
+      if (tagged.length) { myVotes[id] = tagged; saveVotes(); }
+      $("#addForm").reset(); $("#name").value = name;
+      photoData = ""; $("#pick").querySelector("img")?.remove(); $("#pickText").textContent = "Take or choose a photo";
+      $("#addDlg").close();
+      toast("Posted to the wall");
+      load();
+    } catch (ex) { err.textContent = ex.message; }
+    btn.disabled = false; btn.textContent = "Post to wall";
+  });
+
+  $("#cForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const text = $("#cText").value.trim();
+    if (!text) { $("#cErr").textContent = "Write something first."; $("#cText").focus(); return; }
+    $("#cErr").textContent = "";
+    const kind = document.querySelector('input[name=kind]:checked').value;
+    const name = $("#cName").value.trim(); rememberName(name);
+    const btn = $("#cBtn"); btn.disabled = true;
+    try {
+      await api(`/api/posts/${openId}/comments`, { method: "POST", body: JSON.stringify({ text, kind, name }) });
+      $("#cText").value = "";
+      toast(kind === "fix" ? "Fix posted" : "Comment posted");
+      load();
+    } catch (ex) { $("#cErr").textContent = ex.message; }
+    btn.disabled = false;
+  });
+
+  // refresh relative times occasionally
+  setInterval(() => { if (openId) renderDetail(); }, 30000);
+
+  load();
+  connect();
+})();
+</script>
+</body>
+</html>
