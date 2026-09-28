@@ -313,11 +313,36 @@
 
   function renderAll() { renderLane(); renderWall(); renderDetail(); }
 
+  function createConfetti(x, y) {
+    const confettiPieces = ['🎉', '✨', '🎊', '🌟'];
+    for (let i = 0; i < 12; i++) {
+      const conf = document.createElement('div');
+      conf.textContent = confettiPieces[Math.floor(Math.random() * confettiPieces.length)];
+      conf.style.cssText = `
+        position: fixed;
+        left: ${x}px;
+        top: ${y}px;
+        font-size: 24px;
+        pointer-events: none;
+        z-index: 3000;
+        animation: confettiFall ${0.8 + Math.random() * 0.6}s ease-out forwards;
+        --tx: ${(Math.random() - 0.5) * 250}px;
+        --ty: ${Math.random() * 250 + 120}px;
+      `;
+      document.body.appendChild(conf);
+      setTimeout(() => conf.remove(), 1400);
+    }
+  }
+
   async function addReaction(postId, emoji) {
     try {
       const btn = document.querySelector(`[data-post-id="${postId}"][data-emoji="${emoji}"]`);
-      if (btn && present) {
+      if (btn) {
         btn.classList.add("pulse");
+        if (present) {
+          const rect = btn.getBoundingClientRect();
+          createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        }
         setTimeout(() => btn.classList.remove("pulse"), 400);
       }
       await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
@@ -598,6 +623,23 @@
 
   load();
   connect();
+
+  // Trigger confetti when new cards appear in presentation mode
+  if (present) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        m.addedNodes.forEach((node) => {
+          if (node.classList && node.classList.contains('print') && node.classList.contains('fresh')) {
+            setTimeout(() => {
+              const rect = node.getBoundingClientRect();
+              createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+            }, 50);
+          }
+        });
+      });
+    });
+    observer.observe(document.getElementById('wall'), { childList: true });
+  }
 })();
 </script>
 </body>
