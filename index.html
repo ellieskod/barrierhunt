@@ -315,6 +315,11 @@
 
   async function addReaction(postId, emoji) {
     try {
+      const btn = document.querySelector(`[data-post-id="${postId}"][data-emoji="${emoji}"]`);
+      if (btn && present) {
+        btn.classList.add("pulse");
+        setTimeout(() => btn.classList.remove("pulse"), 400);
+      }
       await api(`/api/posts/${postId}/reactions`, { method: "POST", body: JSON.stringify({ emoji }) });
       load();
     } catch (e) { toast(e.message); }
