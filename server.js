@@ -97,7 +97,7 @@ const server = http.createServer(async (req, res) => {
         const content = fs.readFileSync(filePath);
         const ext = path.extname(filePath);
         const types = { ".css": "text/css", ".js": "application/javascript", ".json": "application/json" };
-        res.writeHead(200, { "Content-Type": types[ext] || "text/plain", "Cache-Control": "public, max-age=3600" });
+        res.writeHead(200, { "Content-Type": types[ext] || "text/plain", "Cache-Control": "no-cache" });
         return res.end(content);
       } catch { res.writeHead(404); return res.end(); }
     }
